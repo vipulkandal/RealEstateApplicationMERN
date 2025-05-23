@@ -21,11 +21,16 @@ export const signin = async (req, res, next) => {
     const validUser = await User.findOne({ email });
     if (!validUser) return next(errorHandler(404, "User not found"));
 
+    // Verify password against the hashed value in the database
     const isValidPassword = bcryptjs.compareSync(password, validUser.password);
     if (!isValidPassword) return next(errorHandler(401, "Invalid password"));
 
     const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
+
+    // Exclude password before sending user data
     const { password: pass, ...userDataWithoutPassword } = validUser._doc;
+
+    // Send token as an HTTP-only cookie to protect it from JS access
     res
       .cookie("access_token", token, { httpOnly: true })
       .status(200)
